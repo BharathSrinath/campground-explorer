@@ -6,14 +6,12 @@ const Campground = require('../models/campground');
 mongoose.connect('mongodb://localhost:27017/yelp-camp');
 
 const db = mongoose.connection;
-
 db.on("error", console.error.bind(console, "connection error:"));
 db.once("open", () => {
     console.log("Database connected");
 });
 
 const sample = array => array[Math.floor(Math.random() * array.length)];
-
 
 const seedDB = async () => {
     await Campground.deleteMany({});
@@ -25,10 +23,20 @@ const seedDB = async () => {
             // for all the campgrounds this person (tom) will be the author. 
             location: `${cities[random1000].city}, ${cities[random1000].state}`,
             title: `${sample(descriptors)} ${sample(places)}`,
-            image: 'https://source.unsplash.com/collection/483251',
             // This is an unsplash resource where everytime you reload a new image will appear despite the URL being the same
             description: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Quibusdam dolores vero perferendis laudantium, consequuntur voluptatibus nulla architecto, sit soluta esse iure sed labore ipsam a cum nihil atque molestiae deserunt!',
-            price
+            price,
+            images: [
+                {
+                    url: 'https://res.cloudinary.com/demq7ecpn/image/upload/v1708786247/cld-sample-2.jpg',
+                    filename: 'cld-sample-2.jpg'
+                },
+                {
+                    url: 'https://res.cloudinary.com/demq7ecpn/image/upload/v1708786249/cld-sample-5.jpg',
+                    filename: 'cld-sample-5.jpg'
+                }
+                // They are sample images from cloudinary. While updating the code with cloudinary, we want to make use of the uploaded images properties (provided by cloudinary) so that we can access the images to perform CRUD operations. 
+            ]
         })
         await camp.save();
     }

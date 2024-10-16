@@ -5,7 +5,7 @@ const Review = require('./models/review');
 
 module.exports.isLoggedIn = (req, res, next) => {
     if (!req.isAuthenticated()) {
-          // When not authenticated, we are trying to remember from where we were redirected to the login page and once logged-in we will again send the user to that particular url. Here we are just storing the value into session under a name called returnTo.
+    // When not authenticated, we are trying to remember from where we were redirected to the login page and once logged-in we will again send the user to that particular url. Here we are just storing the value into session under a name called returnTo.
     // This value will be first accessed at the login page (routes/users.js). Please visit there for further clarification. 
         req.session.returnTo = req.originalUrl
         req.flash('error', 'You must be signed in first!');
@@ -13,7 +13,7 @@ module.exports.isLoggedIn = (req, res, next) => {
     }
     next();
 }
-// isLogged will be added as a middlware in every request where teh CRUD operations are allowed to perform like adding, updating, deleting campgrounds and reviews.
+// isLogged will be added as a middleware in every request where the CRUD operations are allowed to perform like adding, updating, deleting campgrounds and reviews.
 // isAuthenticated()
     // isAuthenticated is a passport method which is added to the req object. 
     // Without the above line, our check for authentication will still wortk absolutely fine. But, lets say that you are trying to edit a campground without being logged-in. When you click the edit button, you will be redirected to the login page right? Now when you login you will be redirected to the campgrounds page (ofcourse based on our code). But in this scenario we want to directly be redirected to the edit page of that particular campground which we have clicked before logging-in. This gives the better user experience. 
@@ -34,6 +34,7 @@ module.exports.storeReturnTo = (req, res, next) => {
     // When user successfully login, the new update clears the session which wipes out session.returnTo information also (on which we are relying to redirect the user upon log-in)
 
 module.exports.validateCampground = (req, res, next) => {
+    req.body.campground.geometry = JSON.parse(req.body.campground.geometry); 
     const { error } = campgroundSchema.validate(req.body);
     if (error) {
         const msg = error.details.map(el => el.message).join(',')

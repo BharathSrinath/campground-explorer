@@ -26,7 +26,7 @@ db.once("open", () => {
     // It returns a promise that resolves when the connection is successful or rejects if there’s an error.
 // mongoose.connection
     // mongoose.connection represents the active connection to the MongoDB server.
-    // Unlike mongoose.connect that will throw an error/success message as configured by us when the server runs initially, mongoose.connection will thrown an error message as configured by us when the server is disconnected. (success message is required only at the initial statge)
+    // Unlike mongoose.connect that will throw an error/success message as configured by us when the server runs initially, mongoose.connection will thrown an error message as configured by us when the server is disconnected. (success message is required only at the initial stage)
     // To achieve this we are explictly using some eventhandlers. 'error' and 'open' are the events. 
 // We cannot use 'addEventListener' because they are event listeners for DOM elements. But in Node.js, which is a server-side JS environment, the addEventListener method is not available because there is no DOM to interact with. 
 // Node.js provides an EventEmmitter class, which allows objects to emit named events that cause functions ("listeners") to be called. Mongoose, being a MongoDB library for Node.js, uses this event-driven architecture to handle events such as connection errors, successful connections, etc.
@@ -155,12 +155,17 @@ app.listen(3000, () => {
 
 
 // Note: While trying to understand bind(), I also came across call() and apply() all 3 of which are related together. Hence will take a look at all of them.
-// All three of them involves a concept called function borrowing and all three methods allow you to control the 'this' context when invoking a function.
+// All three of them involves a concept called function borrowing and all three methods allow you to control what the 'this' keyword refers to when invoking a function.
 // They basically bind the function and the object with small differences between each of them
 // They are called on the function with which we are going to bind the object. First argument to all of them refers to that object. 
-    // For call, 2nd, 3rd, etc. are the arguments that we zre passing to the function.
-    // For apply, exactly the same as call but there will be only one argument and that will be an array within which we can pass as many elements as we want.
-    // For bind, it is similar to the call method in terms of passing an argument. But it differs from one aspect compared to the above two. While call and apply method is invoked/called directly (we dont need to separately call them like a normal function), bind method returns a copy of a function that binds the function and object. This function copy can be stored in a variable and invoked later.  
+    // For call, 2nd, 3rd, etc. are the arguments that we are passing to the function.
+    // For apply, exactly same as call but there will be only one argument and that will be an array within which we can pass as many elements as we want.
+    // For bind, it is similar to the call method in terms of passing an argument. But it differs from one aspect compared to the above two. While call and apply method is invoked/called directly (we dont need to separately call them like a normal function), bind method returns a copy of a function that binds the function and object. This function copy can be stored in a variable and invoked later. This is what we are doing when we pass them to an event handler. So rather than creating a new function everytime (like call/apply), we are just invoking this copy created by bind function. (so no new functions created). 
+        // Neither call() nor apply() creates a new function. They directly execute the original function.
+        // Unlike call() and apply(), bind() does not immediately invoke the function. Instead, it returns a new function. The new function can be called later, maintaining the specified context. Use bind() when you want to create a reusable function with a specific context.
+        // When we use the bind() method in JS, it creates a new function called 'bound function' that is permanently bound to a particular object.
+            // This bound function is created only once during initialization and then reused every time an error occurs (in our case). The key point is that the binding (association with the console object) happens once, not repeatedly for each error event.
+
 
 // Lets look at the below example
 
@@ -174,7 +179,6 @@ app.listen(3000, () => {
         // }
 
         // printFullName.call(name, 'Chennai', 'TamilNadu');
-        // // 
 
         // let name2 = {
         //     firstName: 'Aravind',
@@ -189,16 +193,17 @@ app.listen(3000, () => {
         // console.log(printMyName());
 
 // Now lets look at our code - db.on("error", console.error.bind(console, "connection error:"));
-// Here console.error is the function with which we are going to bind an object called console.
-// "connection error:" is a string argument that will be passed to console.error function. 
-// First argument that we pass to the bind method helps us to set the 'this'keyword to that object. But we console.error doesn't have any 'this' keyword usage at all. Since there is no 'this' keyword usag here we can just pass an empty string as the first argument too. But just for better consistency of writing the code we are passing the console object which is the actual object under which "error" property is present. 
-// We could have also used db.on("error", () => console.error("connection error:")); This would indeed work just as above. But there is an inefficiency aspect to it.
-    // Whenever an "error" event is triggered, we will creating a new anonymous function.
-// But when we use .bind(), we create a new function (called preset function) based on an existing function (in this case, console.error).
-// The new function is pre-set with specific arguments (such as the error message “connection error:”).
-// This pre-set function is stored and can be invoked later without re-creating it.
-// when the “error” event occurs (e.g., due to a database connection issue): 
-    // The pre-set function (created by .bind()) is invoked directly.
-    // It’s as if we called console.error("connection error:") directly.
-    // The error message “connection error:” is logged to the console.
-// We create the pre-set function only once (usually during initialization). Later, when the event happens, we reuse this pre-set function. No additional function creation occurs during each event.
+    // Here console.error is the function with which we are going to bind an object called console.
+    // "connection error:" is a string argument that will be passed to console.error function. 
+    // First argument that we pass to the bind method is an object. This object is what 'this' keyword will refer to. But in our scenario, console.error doesn't have any 'this' keyword usage at all. But for better consistency of writing the code we are passing the console object which is the actual object under which "error" property is present. 
+        // What you have to understand is in our scenario we are not using bind for associating 'this' keyword to an object. Rather we are using it for efficiency purpose as bound function is created once and recalled eveytime when an error occurs. 
+    // We could have also used db.on("error", () => console.error("connection error:")); This would indeed work just as above. But there is an inefficiency aspect to it.
+        // Whenever an "error" event is triggered, we will be creating a new anonymous function.
+    // But when we use .bind(), we create a new function (called preset function) based on an existing function (in this case, console.error).
+    // The new function is pre-set with specific arguments (such as the error message “connection error:”).
+    // This pre-set function is stored and can be invoked later without re-creating it.
+    // when the “error” event occurs (e.g., due to a database connection issue): 
+        // The pre-set function (created by .bind()) is invoked directly.
+        // It’s as if we called console.error("connection error:") directly.
+        // The error message “connection error:” is logged to the console.
+    // We create the pre-set function only once (usually during initialization). Later, when the event happens, we reuse this pre-set function. No additional function creation occurs during each event.
