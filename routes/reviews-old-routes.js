@@ -1,29 +1,29 @@
 const express = require('express');
 const router = express.Router({ mergeParams: true });
-// IMPORTANT: express-router generally keeps the parameters separate. Our review routes need a campground id to create a review so that that particular review can be associated with a particular campground. Since express-router keeps the params separate we, the review will not have access to that id unless we specify "mergerParams: true" 
+// IMPORTANT: express-router generally keeps the parameters separate. Our review routes need a destination id to create a review so that that particular review can be associated with a particular destination. Since express-router keeps the params separate we, the review will not have access to that id unless we specify "mergerParams: true" 
 const { validateReview, isLoggedIn, isReviewAuthor } = require('../middleware');
-const Campground = require('../models/campground');
+const Destination = require('../models/destination');
 const Review = require('../models/review');
 const ExpressError = require('../utils/ExpressError');
 const catchAsync = require('../utils/catchAsync');
 
 router.post('/', isLoggedIn, validateReview, catchAsync(async (req, res) => {
-    const campground = await Campground.findById(req.params.id);
+    const destination = await Destination.findById(req.params.id);
     const review = new Review(req.body.review);
     review.author = req.user._id;
-    campground.reviews.push(review);
+    destination.reviews.push(review);
     await review.save();
-    await campground.save();
-    req.flash('success', 'Created new review!');
-    res.redirect(`/campgrounds/${campground._id}`);
+    await destination.save();
+    req.flash('success', 'Submitted your review!');
+    res.redirect(`/destinations/${destination._id}`);
 }))
 
 router.delete('/:reviewId', isLoggedIn, isReviewAuthor, catchAsync(async (req, res) => {
     const { id, reviewId } = req.params;
-    await Campground.findByIdAndUpdate(id, { $pull: { reviews: reviewId } });
+    await Destination.findByIdAndUpdate(id, { $pull: { reviews: reviewId } });
     await Review.findByIdAndDelete(reviewId);
     req.flash('success', 'Successfully deleted review')
-    res.redirect(`/campgrounds/${id}`);
+    res.redirect(`/destinations/${id}`);
 }))
 
 module.exports = router;

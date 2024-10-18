@@ -1,21 +1,68 @@
-const Campground = require('../models/campground');
+const Destination = require('../models/destination');
 const Review = require('../models/review');
+const dayjs = require('dayjs');
+const relativeTime = require('dayjs/plugin/relativeTime');
+dayjs.extend(relativeTime);
 
 module.exports.createReview = async (req, res) => {
-    const campground = await Campground.findById(req.params.id);
+    const destination = await Destination.findById(req.params.id).populate({
+        path: 'reviews',
+        populate: {
+            path: 'author'
+        }
+    }).populate('author');
+    if(!destination){
+        req.flash('error', 'Destination not available');
+        return res.redirect("/destinations");
+    }
+    console.log("Reviews: "+destination);
+    console.log("User Id: "+req.user._id);
+    const existingReview = destination.reviews.find((review) => {
+        console.log(review.author)
+        return review.author.equals(req.user._id)
+    });
+    if (existingReview) {
+        req.flash('error', 'You have already submitted a review for this destination!');
+        return res.redirect(`/destinations/${destination._id}`);
+    }
     const review = new Review(req.body.review);
     review.author = req.user._id;
-    campground.reviews.push(review);
+    destination.reviews.push(review);
     await review.save();
-    await campground.save();
-    req.flash('success', 'Created new review!');
-    res.redirect(`/campgrounds/${campground._id}`);
+    await destination.save();
+    req.flash('success', 'Submitted your review!');
+    res.redirect(`/destinations/${destination._id}`);
 }
 
 module.exports.deleteReview = async (req, res) => {
     const { id, reviewId } = req.params;
-    await Campground.findByIdAndUpdate(id, { $pull: { reviews: reviewId } });
+    await Destination.findByIdAndUpdate(id, { $pull: { reviews: reviewId } });
     await Review.findByIdAndDelete(reviewId);
     req.flash('success', 'Successfully deleted review')
-    res.redirect(`/campgrounds/${id}`);
+    res.redirect(`/destinations/${id}`);
 }
+
+module.exports.renderEditReview = async (req, res) => {
+    const { id, reviewId } = req.params;
+    const destination = await Destination.findById(id);
+    const review = await Review.findById(reviewId);
+    if (!review) {
+        req.flash('error', 'Cannot find the review');
+        return res.redirect(`/destinations/${id}`);
+    }
+    res.render('destinations/editReview', { destination, review });
+};
+
+module.exports.updateReview = async (req, res) => {
+    const { id, reviewId } = req.params;
+    const review = await Review.findById(reviewId);
+    if (!review.author.equals(req.user._id)) {
+        req.flash('error', 'You do not have permission to edit this review.');
+        return res.redirect(`/destinations/${id}`);
+    }
+    review.body = req.body.review.body; 
+    review.rating = req.body.review.rating; 
+    await review.save();
+    req.flash('success', 'Review updated successfully!');
+    res.redirect(`/destinations/${id}`);
+};

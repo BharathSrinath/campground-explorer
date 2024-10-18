@@ -4,14 +4,14 @@ const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
 const ejsMate = require('ejs-mate');
-const { campgroundSchema, reviewSchema } = require('./schemas.js');
+const { destinationSchema, reviewSchema } = require('./schemas.js');
 const catchAsync = require('./utils/catchAsync.js');
 const ExpressError = require('./utils/ExpressError.js');
 const methodOverride = require('method-override');
-const Campground = require('./models/campground.js');
+const Destination = require('./models/destination.js');
 const Review = require('./models/review.js');
 
-mongoose.connect('mongodb://localhost:27017/yelp-camp');
+mongoose.connect('mongodb://localhost:27017/destinationDiaries');
 
 const db = mongoose.connection;
 db.on("error", console.error.bind(console, "connection error:"));
@@ -42,13 +42,13 @@ app.set('views', path.join(__dirname, 'views'))
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride('_method'));
 
-// validating campground
-const validateCampground = (req, res, next) => {
-    const { error } = campgroundSchema.validate(req.body);
+// validating destination
+const validateDestination = (req, res, next) => {
+    const { error } = destinationSchema.validate(req.body);
     // Here the req.body means the body of the request that the client is making to the server. When the request is unsuccessful, we are destructuring the error property and writing logic based on that.
     if (error) {
         const msg = error.details.map(el => el.message).join(',')
-        // In our campground Schema we have many fields that are made mandatory. Under error we have property called details. Detail properties will present under every place where the criteria is not met. It will have message regarding what went wrong. We are iterating over all of them and joning all the messages togther to display it on the screen. 
+        // In our destination Schema we have many fields that are made mandatory. Under error we have property called details. Detail properties will present under every place where the criteria is not met. It will have message regarding what went wrong. We are iterating over all of them and joning all the messages togther to display it on the screen. 
         throw new ExpressError(msg, 400)
     } else {
         next();
@@ -71,70 +71,70 @@ app.get('/', (req, res) => {
     res.render('home')
 });
 
-// All campgrounds list
-app.get('/campgrounds', async (req, res) => {
-    const campgrounds = await Campground.find({});
-    res.render('campgrounds/index', { campgrounds })
+// All destinations list
+app.get('/destinations', async (req, res) => {
+    const destinations = await Destination.find({});
+    res.render('destinations/index', { destinations })
 });
 
-// Creating a new campground - user input
-app.get('/campgrounds/new', (req, res) => {
-    res.render('campgrounds/new');
+// Creating a new destination - user input
+app.get('/destinations/new', (req, res) => {
+    res.render('destinations/new');
 })
 
-// Creating a new campground - user sending request
-app.post('/campgrounds', validateCampground, catchAsync(async (req, res, next) => {
+// Creating a new destination - user sending request
+app.post('/destinations', validateDestination, catchAsync(async (req, res, next) => {
     // if catch Async catches an error, next function will pass it to the next erro-handling middleware which is at the bottom
-    const campground = new Campground(req.body.campground);
-    await campground.save();
-    res.redirect(`/campgrounds/${campground._id}`)
+    const destination = new Destination(req.body.destination);
+    await destination.save();
+    res.redirect(`/destinations/${destination._id}`)
 }))
 
-// Shows the respective campground page when the user clicks on the campground
-app.get('/campgrounds/:id', catchAsync(async (req, res,) => {
-    const campground = await Campground.findById(req.params.id).populate('reviews');
-    res.render('campgrounds/show', { campground });
+// Shows the respective destination page when the user clicks on the destination
+app.get('/destinations/:id', catchAsync(async (req, res,) => {
+    const destination = await Destination.findById(req.params.id).populate('reviews');
+    res.render('destinations/show', { destination });
 }));
 
 // Brings up the edit form with pre-populated values
-app.get('/campgrounds/:id/edit', catchAsync(async (req, res) => {
-    const campground = await Campground.findById(req.params.id)
-    res.render('campgrounds/edit', { campground });
+app.get('/destinations/:id/editForm', catchAsync(async (req, res) => {
+    const destination = await Destination.findById(req.params.id)
+    res.render('destinations/editForm', { destination });
 }))
 
 // Post the edit form with updated values
-app.put('/campgrounds/:id', validateCampground, catchAsync(async (req, res) => {
+app.put('/destinations/:id', validateDestination, catchAsync(async (req, res) => {
     const { id } = req.params;
-    const campground = await Campground.findByIdAndUpdate(id, { ...req.body.campground });
-    // In .ejs files, within forms we have given names as campground[location], campground[title], etc. We have never done that in the past. This is a way to structure the data being sent as an object. When the form is submitted, the data will be sent as an object named campground with properties title and location. So here we are using spread operator to expand that object and pass the updated values. This can be particularly useful when you’re dealing with a lot of form data, as it allows you to group related data together.
-    res.redirect(`/campgrounds/${campground._id}`)
+    const destination = await Destination.findByIdAndUpdate(id, { ...req.body.destination });
+    // In .ejs files, within forms we have given names as destination[location], destination[title], etc. We have never done that in the past. This is a way to structure the data being sent as an object. When the form is submitted, the data will be sent as an object named destination with properties title and location. So here we are using spread operator to expand that object and pass the updated values. This can be particularly useful when you’re dealing with a lot of form data, as it allows you to group related data together.
+    res.redirect(`/destinations/${destination._id}`)
 }));
 
-// Deleting a campground
-app.delete('/campgrounds/:id', catchAsync(async (req, res) => {
+// Deleting a destination
+app.delete('/destinations/:id', catchAsync(async (req, res) => {
     const { id } = req.params;
-    await Campground.findByIdAndDelete(id);
-    res.redirect('/campgrounds');
+    await Destination.findByIdAndDelete(id);
+    res.redirect('/destinations');
 }));
 
 // Posting a review 
-app.post('/campgrounds/:id/reviews', validateReview, catchAsync(async (req, res) => {
-    const campground = await Campground.findById(req.params.id);
+app.post('/destinations/:id/reviews', validateReview, catchAsync(async (req, res) => {
+    const destination = await Destination.findById(req.params.id);
     const review = new Review(req.body.review);
-    campground.reviews.push(review);
+    destination.reviews.push(review);
     await review.save();
-    await campground.save();
-    res.redirect(`/campgrounds/${campground._id}`);
+    await destination.save();
+    res.redirect(`/destinations/${destination._id}`);
 }))
 
 // Deleting a review
-app.delete('/campgrounds/:id/reviews/:reviewId', catchAsync(async (req, res) => {
+app.delete('/destinations/:id/reviews/:reviewId', catchAsync(async (req, res) => {
     const { id, reviewId } = req.params;
-    await Campground.findByIdAndUpdate(id, { $pull: { reviews: reviewId } });
+    await Destination.findByIdAndUpdate(id, { $pull: { reviews: reviewId } });
         // See review is in 2 places actually. At one place we have the actual reference. In another place we have the reference of that review. While the below line deletes the former, above line deletes the latter.
-        // We have seen set operator already. But this is new. First argument is the id that we are trying to find (campground id) and then pull operator will look into reviews (which is an array by the way) to pull the reviewId out of it. (Here pull basically means to delete it)
+        // We have seen set operator already. But this is new. First argument is the id that we are trying to find (destination id) and then pull operator will look into reviews (which is an array by the way) to pull the reviewId out of it. (Here pull basically means to delete it)
     await Review.findByIdAndDelete(reviewId);
-    res.redirect(`/campgrounds/${id}`);
+    res.redirect(`/destinations/${id}`);
 }))
  
 // .all('*') is similar to .use() interms of functionality. * means wildcard which means all the requests in this scenario (get, post, put, patch, delete, etc.). app.use() is like applying a rule to every case, while app.all('*') is like the default case that catches anything that hasn’t been caught by the specific cases. So the order of app.all(*) matters a lot. You have to place only after all the routes that are defined for the user to navigate.

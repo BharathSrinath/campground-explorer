@@ -1,11 +1,12 @@
 # setup the basic code in index.js
     # require the libraries - express, mongoose, path, ejs-mate/react, ExpressError, method-override, (passport, passport-local, express-session and connect-flash) => if it involves authentication. 
-    # Add basic routes (which are later restructured using express-router) and its corresponding pages for campgrounds.
+    # Add basic routes (which are later restructured using express-router) and its corresponding pages for destinations.
         1. '/' - home 
-        2. '/campgrounds', - index 
-        3. '/campgrounds/new' - new
-        4. '/campgrounds/:id' - show
-        5. '/campgrounds/:id/edit' - edit
+        2. '/destinations', - index 
+        3. '/destinations/new' - new
+        4. '/destinations/:id' - show
+        5. '/destinations/:id/editForm' - edit
+        5. '/destinations/:id/editReview' - edit
         6. biolerplate.js will have the common elements like navbar, flash, footer and bootstrap links.
     # Similarly for users
         1. login.ejs
@@ -18,20 +19,20 @@
 
 # create models:
     # require mongoose
-    # create campgrounds, review and users models
+    # create destinations, review and users models
 
 # routes folder:
     # This is where you will have all the routes and validation but their definition exists elsewhere.
 
 # controllers:
-    # routes definition for campgrounds.js, reviews.js and users.js
+    # routes definition for destinations.js, reviews.js and users.js
 
 # schema.js
     # For validations to work, we are using a library called joi. It provides a method called 'validate'.
-    # So we will be setting up the schema for campgrounds and reviews here. For other validations we are using the normal logic (like comparing id's) or using passport (for authentication). 
+    # So we will be setting up the schema for destinations and reviews here. For other validations we are using the normal logic (like comparing id's) or using passport (for authentication). 
 
 # middlware.js
-    # validations (isLoggedIn, isAuthor, validateCampground) definition
+    # validations (isLoggedIn, isAuthor, validateDestination) definition
     # This definition will make use of validate method that is defined in schema.js
 
 # client vs server-side validation:
@@ -76,8 +77,8 @@
     # We have already restructured the routes using express-router. Now we will further restructure by moving all the logic under routes to controller folder.
     # Now this can be further simplified with router.route where you can group the similar paths route but different http routes. 
         # Ex: router.route('/')
-                    .get(catchAsync(campgrounds.index))
-                    .post(isLoggedIn, validateCampground, catchAsync(campgrounds.createCampground))
+                    .get(catchAsync(destinations.index))
+                    .post(isLoggedIn, validateDestination, catchAsync(destinations.createDestination))
             # here both has the path of '/'
     # But while grouping make sure that the change of orders doesn't affect the code.
 
@@ -105,7 +106,7 @@
         # To use multer-storage-cloudinary, we need to install multer too.
 
 # cloudinary transformation API: 
-    # We are using this feature to shrink the image by appending the width to the url so that the shrunk image is displayed as a thumbnail when we are tryting to update the campground.
+    # We are using this feature to shrink the image by appending the width to the url so that the shrunk image is displayed as a thumbnail when we are tryting to update the destination.
 
 # dotenv:
     # There are varaibles that we can't put it inside the code (like password or key). We have to store them separately.
@@ -123,6 +124,6 @@
             # https://github.com/mapbox/mapbox-sdk-js
             # https://github.com/mapbox/mapbox-sdk-js/blob/main/docs/services.md
     # Copy-paste the token in .env and npm i @mapbox/mapbox-sdk
-    # We will be adding them in campground controllers as that is the place where we are creating them. Also require them at the top. There are many features in mapbox. We want to require only geocoding (specifically forward geocode). 
+    # We will be adding them in destination controllers as that is the place where we are creating them. Also require them at the top. There are many features in mapbox. We want to require only geocoding (specifically forward geocode). 
         # mapbox documentation says that "To create a service client, import the service's factory function from '@mapbox/mapbox-sdk/services/{service}' and provide it with your access token."
         # const mbxGeocoding = require('@mapbox/mapbox-sdk/services/geocoding');

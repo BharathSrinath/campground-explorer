@@ -1,14 +1,14 @@
 <% layout('layouts/boilerplate')%>
-<div class="row">
-  <h1 class="text-center">New Campground</h1>
-  <div class="col-6 offset-3">
+<div class="row my-5 container-fluid mx-auto">
+  <h1 class="text-center">New Destination</h1>
+  <div class="col-md-6 offset-md-3">
     <form
-      action="/campgrounds"
+      action="/destinations"
       method="POST"
       novalidate
       class="validated-form"
       enctype="multipart/form-data"
-      id="campground-create-form"
+      id="destination-create-form"
     >
       <div class="mb-3">
         <label class="form-label" for="title">Title</label>
@@ -16,7 +16,7 @@
           class="form-control"
           type="text"
           id="title"
-          name="campground[title]"
+          name="destination[title]"
           required
         />
         <div class="valid-feedback">Looks good!</div>
@@ -24,23 +24,34 @@
       </div>
       <div class="mb-3">
         <label class="form-label" for="location-input">Location</label>
-        <mapbox-search-box
-          access-token="pk.eyJ1IjoiYmhhcmF0aHNyaW5hdGgiLCJhIjoiY2x0aTM5N216MDgzazJpcXYwbzd4Nmh6NCJ9.fX75mchF4LxFXd_0RXqFIw"
-          proximity="0,0"
-        >
-        </mapbox-search-box>
+        <div id="location-wrapper" class="form-control p-0">
+          <mapbox-search-box
+            access-token="pk.eyJ1IjoiYmhhcmF0aHNyaW5hdGgiLCJhIjoiY2x0aTM5N216MDgzazJpcXYwbzd4Nmh6NCJ9.fX75mchF4LxFXd_0RXqFIw"
+            proximity="0,0"
+            id="location-input"
+          >
+          </mapbox-search-box>
+        </div>
         <div class="valid-feedback">Looks good!</div>
         <div class="invalid-feedback">Please enter a location</div>
       </div>
-      
+
       <!-- Hidden inputs to store location and geometry from mapbox-search-box -->
-      <input type="hidden" name="campground[location]" id="campground-location">
-      <input type="hidden" name="campground[geometry]" id="campground-geometry">
-      
+      <input
+        type="hidden"
+        name="destination[location]"
+        id="destination-location"
+      />
+      <input
+        type="hidden"
+        name="destination[geometry]"
+        id="destination-geometry"
+      />
+
       <div class="mb-3">
-        <label class="form-label" for="price">Campground Price</label>
+        <label class="form-label" for="price">Price</label>
         <div class="input-group">
-          <span class="input-group-text" id="price-label">$</span>
+          <span class="input-group-text" id="price-label">₹</span>
           <input
             type="text"
             class="form-control"
@@ -48,7 +59,7 @@
             placeholder="0.00"
             aria-label="price"
             aria-describedby="price-label"
-            name="campground[price]"
+            name="destination[price]"
             required
           />
           <div class="valid-feedback">Looks good!</div>
@@ -62,31 +73,29 @@
           class="form-control"
           type="text"
           id="description"
-          name="campground[description]"
+          name="destination[description]"
           required
         ></textarea>
         <div class="valid-feedback">Looks good!</div>
-        <div class="invalid-feedback">Kindly describe the campground</div>
+        <div class="invalid-feedback">Kindly describe the destination</div>
       </div>
       <div class="mb-3">
-        <div>
-          <label for="image" class="form-label">Choose image(s)...</label>
-          <input
-            class="form-control"
-            type="file"
-            id="image"
-            name="image"
-            multiple
-          />
-        </div>
+        <label for="image" class="form-label">Choose image(s)...</label>
+        <input
+          class="form-control"
+          type="file"
+          id="image"
+          name="image"
+          multiple
+          required
+        />
         <div class="valid-feedback">Looks good!</div>
         <div class="invalid-feedback">Kindly upload atleast one image</div>
       </div>
-      <div class="mb-3">
-        <button class="btn btn-success">Add Campground</button>
+      <div class="mt-5">
+        <button class="btn btn-success">Add Destination</button>
       </div>
     </form>
-    <a href="/campgrounds">All Campgrounds</a>
   </div>
 </div>
 

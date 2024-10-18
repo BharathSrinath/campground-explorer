@@ -2,9 +2,6 @@ const mongoose = require('mongoose');
 const Review = require('./review')
 const Schema = mongoose.Schema;
 
-
-// https://res.cloudinary.com/douqbebwk/image/upload/w_300/v1600113904/YelpCamp/gxgle1ovzd2f3dgcpass.png
-
 const ImageSchema = new Schema({
     url: String,
     filename: String
@@ -14,7 +11,12 @@ ImageSchema.virtual('thumbnail').get(function () {
     return this.url.replace('/upload', '/upload/w_200');
 });
 
-const CampgroundSchema = new Schema({
+const opts = { 
+    toJSON: { virtuals: true },
+    timestamps: true
+};
+
+const DestinationSchema = new Schema({
     title: String,
     images: [ImageSchema],
    // In a GeoJSON object, a Point represents a single geographic position or location on the Earth's surface. It is defined using latitude and longitude coordinates in a GeoJSON format, following a specific structure.
@@ -44,22 +46,26 @@ const CampgroundSchema = new Schema({
             ref: 'Review'
         }
     ]
-});
+}, opts);
 
 
-// Whenever a campground is deleted, we need to delete the reviews asscoiated with it too. So whenever a campground is deleted using 'findByIdAndDelete', 'findOneAndDelete' will be triggered. 
+// Whenever a destination is deleted, we need to delete the reviews asscoiated with it too. So whenever a destination is deleted using 'findByIdAndDelete', 'findOneAndDelete' will be triggered. 
 // Most challenging prospect about mongoose is that, name of the CRUD operation is not similar to the name of the hook/middlware.
 // https://mongoosejs.com/docs/middleware.html
     
-CampgroundSchema.post('findOneAndDelete', async function (doc) {
-    // When findOneAndDelete is triggered, delete campground will be passed as an argument to the async(). If successfully deleted, if condition will be true and we will delete all the reviews under that campground which was deleted.
+DestinationSchema.post('findOneAndDelete', async function (doc) {
+    // When findOneAndDelete is triggered, delete destination will be passed as an argument to the async(). If successfully deleted, if condition will be true and we will delete all the reviews under that destination which was deleted.
     if (doc) {
         await Review.deleteMany({ _id: { $in: doc.reviews } })
-        // Here _id refers to every review that exists in our database (of all the campgrounds). So we are checking and deleting the reviews if they are present in the deleted campground.  
+        // Here _id refers to every review that exists in our database (of all the destinations). So we are checking and deleting the reviews if they are present in the deleted destination.  
     }
 })
 
-module.exports = mongoose.model('Campground', CampgroundSchema);
+DestinationSchema.virtual('properties.popUpMarkup').get(function() {
+    return `<a href="/destinations/${this._id}" style="text-decoration: none; font-weight: bold; color: black">${this.title}</a>`;
+})
+
+module.exports = mongoose.model('Destination', DestinationSchema);
 
 // About different usage of id syntax:
 // In MongoDB, the unique identifier for each document is automatically named _id. So when we're working directly with the database or Mongoose, we will use _id to refer to the document’s identifier.

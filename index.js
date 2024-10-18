@@ -2,25 +2,27 @@
 if (process.env.NODE_ENV !== "production") {
     require('dotenv').config();
 }
-
 const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
 const ejsMate = require('ejs-mate');
 const session = require('express-session');
 const flash = require('connect-flash');
-const ExpressError = require('./utils/ExpressError');
 const methodOverride = require('method-override');
 const passport = require('passport');
 const LocalStrategy = require('passport-local');
+const mongoSanitize = require('express-mongo-sanitize');
+const helmet =  require('helmet');
+const MongoStore = require('connect-mongo');
+
+const ExpressError = require('./utils/ExpressError');
 const User = require('./models/user');
 
-
 const userRoutes = require('./routes/users');
-const campgroundRoutes = require('./routes/campgrounds');
+const destinationRoutes = require('./routes/destinations');
 const reviewRoutes = require('./routes/reviews');
 
-mongoose.connect('mongodb://localhost:27017/yelp-camp');
+mongoose.connect(process.env.DB_URL);
 
 const db = mongoose.connection;
 db.on("error", console.error.bind(console, "connection error:"));
@@ -37,9 +39,26 @@ app.set('views', path.join(__dirname, 'views'))
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride('_method'));
 app.use(express.static(path.join(__dirname, 'public')))
+app.use(mongoSanitize());
+
+// Kindly refer mongoDB notes
+const store = MongoStore.create({
+    mongoUrl: process.env.DB_URL,
+    touchAfter: 24 * 60 * 60,
+    // We are saying to the session be updated only one time in a period of 24 hours, does not matter how many request's are made (with the exception of those that change something on the session data)
+    crypto: {
+        secret: 'destinationDiaries2024'
+    }
+});
+
+store.on("error", function (e) {
+    console.log("SESSION STORE ERROR", e)
+})
 
 const sessionConfig = {
-    secret: 'thisshouldbeabettersecret!',
+    store: store,
+    name: 'ddUser',
+    secret: 'destinationDiaries2024',
     // This is the secret key used to sign the session ID cookie. The session ID is stored on the client-side in a cookie, and this secret is used to hash the session ID. This ensures that even if someone intercepts the session ID, they cannot modify it because they don't know the secret key used to sign it.
     resave: false,
     // This option controls whether the session should be saved back to the session store, even if it hasn't been modified during the request.
@@ -49,7 +68,8 @@ const sessionConfig = {
         httpOnly: true,
         // The httpOnly property, when set to true, ensures that the cookie can only be accessed via HTTP requests and cannot be accessed by client-side JavaScript running in the browser. This helps mitigate certain types of security vulnerabilities, such as cross-site scripting (XSS) attacks. I have attached cookie.js file just to understand how the details of a cookie can be retrieved using a JS code. When you type this code in console, the values can be accessed. 
         // Now a days, most of the frameworks set the default value of httpOnly : true.
-
+        // secure: true means Cookie is accessible only with https. (In development (localhost) or when using http, the cookie cannot accessed)
+        // secure: true,
         expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
         // Date.now() is in milliseconds. We are adding an expiry of 1 week in ms
         
@@ -61,6 +81,51 @@ const sessionConfig = {
 
 app.use(session(sessionConfig))
 app.use(flash());
+app.use(helmet());
+
+const scriptSrcUrls = [
+    "https://cdn.jsdelivr.net/",
+    "https://api.tiles.mapbox.com/",
+    "https://api.mapbox.com/",
+    "https://kit.fontawesome.com/",
+    "https://cdnjs.cloudflare.com/",
+    "https://cdn.jsdelivr.net",
+];
+const styleSrcUrls = [
+    "https://kit-free.fontawesome.com/",
+    "https://cdn.jsdelivr.net/",
+    "https://api.mapbox.com/",
+    "https://api.tiles.mapbox.com/",
+    "https://fonts.googleapis.com/",
+    "https://use.fontawesome.com/",
+];
+const connectSrcUrls = [
+    "https://api.mapbox.com/",
+    "https://a.tiles.mapbox.com/",
+    "https://b.tiles.mapbox.com/",
+    "https://events.mapbox.com/",
+];
+const fontSrcUrls = [];
+app.use(
+    helmet.contentSecurityPolicy({
+        directives: {
+            defaultSrc: [],
+            connectSrc: ["'self'", ...connectSrcUrls],
+            scriptSrc: ["'unsafe-inline'", "'self'", ...scriptSrcUrls],
+            styleSrc: ["'self'", "'unsafe-inline'", ...styleSrcUrls],
+            workerSrc: ["'self'", "blob:"],
+            objectSrc: [],
+            imgSrc: [
+                "'self'",
+                "blob:",
+                "data:",
+                "https://res.cloudinary.com/demq7ecpn/", //demq7ecpn is my cloudinary name 
+                "https://images.unsplash.com/",
+            ],
+            fontSrc: ["'self'", ...fontSrcUrls],
+        },
+    })
+);
 
 // Incorporating passport
 // Just remember these steps
@@ -81,7 +146,7 @@ app.use((req, res, next) => {
         req.session.returnTo = req.originalUrl;
     }
     // if we are coming from login to the login (clicking the login page by being in the login page) or coming to login page from the home page, we dont want to set that particular Url to returnTo value. Just imagine what will happen if you do so.
-        // From home page, when someone logs-in we want them to show the list of all the campgrounds. Showing the home page again is not a good user experience.
+        // From home page, when someone logs-in we want them to show the list of all the destinations. Showing the home page again is not a good user experience.
         // Also when the user directly clicks the login link in the nav-bar to login, that route will get stored in the originalUrl and we will send them to log-in page again even after logging-in. 
     // The includes() method is used to determine if a specified value exists in an array or string.
     // In this case, it checks if req.originalUrl matches either '/login' or '/'. if it doesn't match, the condition evaluates to true.
@@ -95,8 +160,8 @@ app.use((req, res, next) => {
 
 
 app.use('/', userRoutes);
-app.use('/campgrounds', campgroundRoutes)
-app.use('/campgrounds/:id/reviews', reviewRoutes)
+app.use('/destinations', destinationRoutes)
+app.use('/destinations/:id/reviews', reviewRoutes)
 
 
 app.get('/', (req, res) => {
