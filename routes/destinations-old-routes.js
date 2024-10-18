@@ -32,7 +32,6 @@ router.get('/:id', catchAsync(async (req, res,) => {
             path: 'author'
         }
     }).populate('author');
-    console.log(destination);
     if (!destination) {
         req.flash('error', 'Cannot find that destination!');
         return res.redirect('/destinations');

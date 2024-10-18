@@ -15,10 +15,7 @@ module.exports.createReview = async (req, res) => {
         req.flash('error', 'Destination not available');
         return res.redirect("/destinations");
     }
-    console.log("Reviews: "+destination);
-    console.log("User Id: "+req.user._id);
     const existingReview = destination.reviews.find((review) => {
-        console.log(review.author)
         return review.author.equals(req.user._id)
     });
     if (existingReview) {
