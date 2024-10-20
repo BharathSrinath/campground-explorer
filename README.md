@@ -4,7 +4,7 @@
     https://destination-diaries-1.onrender.com/
 
 # YouTube Demo:
-    (Link will be updated later)
+    https://www.youtube.com/watch?v=3mMGCaEfPSA
 
 # Features:
 
