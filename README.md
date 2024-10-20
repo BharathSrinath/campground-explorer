@@ -1,7 +1,7 @@
 # Destination Diaries
 
 # Live:
-    https://destination-diaries-1.onrender.com/
+    https://destination-diaries-o3z9.onrender.com
 
 # YouTube Demo:
     https://www.youtube.com/watch?v=3mMGCaEfPSA
